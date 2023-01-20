@@ -2,6 +2,7 @@ package= { name= 'camera', version= '0.0.0', edition= '2021' }
 
 [dependencies]
 fehler = '*'
+bytemuck = '*'
 v4l = '*'
 vector = { git= 'https://github.com/Matthias-Fauconneau/vector' }
 image = { git= 'https://github.com/Matthias-Fauconneau/image' }

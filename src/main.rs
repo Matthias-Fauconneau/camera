@@ -1,8 +1,6 @@
 fn main() -> ui::Result<()> {
-    let path = "/dev/video4";
-    let device = v4l::Device::with_path(path)?;
-    use v4l::video::Capture;
-    let format = device.set_format(&v4l::format::Format{
+    use v4l::{video::Capture, io::traits::CaptureStream};
+    let format = v4l::format::Format{
         width: 160,
         height: 120,
         fourcc: v4l::FourCC::new(b"Y16 "),
@@ -13,26 +11,41 @@ fn main() -> ui::Result<()> {
         colorspace: v4l::format::colorspace::Colorspace::Default,
         quantization: v4l::format::quantization::Quantization::FullRange,
         transfer: v4l::format::transfer::TransferFunction::None
-    })?;
-    //let params = device.params()?;
-    struct View<'t> {
-        format: v4l::format::Format,
-        stream: v4l::io::mmap::Stream<'t>
-    }
-    impl ui::Widget for View<'_> { #[fehler::throws(ui::Error)] fn paint(&mut self, target: &mut ui::Target, _: ui::size, _: ui::int2) {
-        use v4l::io::traits::CaptureStream;
-        let (source, _) = self.stream.next().unwrap();
-        use vector::xy;
-        let source = image::Image::<&[u16]>::cast_slice(source, xy{x: self.format.width, y: self.format.height});
-        let min = *source.iter().min().unwrap();
-        let max = *source.iter().max().unwrap();
-        for y in 0..target.size.y {
-            for x in 0..target.size.x {
-                let w = (source[xy{x: x*source.size.x/target.size.x, y: y*source.size.y/target.size.y}] - min) as u32 * ((1<<10)-1) / (max - min) as u32;
-                target[xy{x,y}] = w | w<<10 | w<<20;
-            }
+    };
+    if std::env::args().any(|arg| arg.contains("send")) {
+        let socket = std::net::UdpSocket::bind("127.0.0.1:8888")?;
+        let device = v4l::Device::with_path("/dev/video4")?;
+        device.set_format(&format)?;
+        let mut stream = v4l::io::mmap::Stream::with_buffers(&device, v4l::buffer::Type::VideoCapture, 1)?;
+        loop {
+            println!("read");
+            let (image, _) = stream.next().unwrap();
+            println!("send");
+            socket.send_to(image, "127.0.0.1:6666")?;
+            println!("sent");
         }
-    } }
-
-    ui::run(&mut View{format, stream: v4l::io::mmap::Stream::with_buffers(&device, v4l::buffer::Type::VideoCapture, 1)?}, &mut |_| Ok(true))
+    } else {
+        struct View {
+            format: v4l::format::Format,
+            stream: std::net::UdpSocket,
+        }
+        impl ui::Widget for View { #[fehler::throws(ui::Error)] fn paint(&mut self, target: &mut ui::Target, _: ui::size, _: ui::int2) {
+            use vector::xy;
+            let mut image = image::Image::<Box<[u16]>>::zero(xy{x: self.format.width, y: self.format.height});
+            println!("receive");
+            let (len, _sender) = self.stream.recv_from(bytemuck::cast_slice_mut(&mut image))?;
+            println!("received");
+            assert_eq!(len, image.len()*2);
+            let min = *image.iter().min().unwrap();
+            let max = *image.iter().max().unwrap();
+            if min <= 0 { return; }
+            for y in 0..target.size.y {
+                for x in 0..target.size.x {
+                    let w = (image[xy{x: x*image.size.x/target.size.x, y: y*image.size.y/target.size.y}] - min) as u32 * ((1<<10)-1) / (max - min) as u32;
+                    target[xy{x,y}] = w | w<<10 | w<<20;
+                }
+            }
+        } }
+        ui::run(&mut View{format, stream: std::net::UdpSocket::bind("127.0.0.1:6666")?}, &mut |_| Ok(true))
+    }
 }
