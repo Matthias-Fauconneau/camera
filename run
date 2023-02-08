@@ -1,0 +1,3 @@
+cross build --target=aarch64-unknown-linux-gnu --release
+rsync $CARGO_TARGET_DIR/aarch64-unknown-linux-gnu/release/camera 10.0.0.2::share
+ssh hololens_2021@10.0.0.2 /home/share/camera send

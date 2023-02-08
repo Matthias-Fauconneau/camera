@@ -1,4 +1,4 @@
-fn main() -> ui::Result<()> {
+fn main() -> std::io::Result<()> {
     use v4l::{video::Capture, io::traits::CaptureStream};
     let format = v4l::format::Format{
         width: 160,
@@ -12,19 +12,19 @@ fn main() -> ui::Result<()> {
         quantization: v4l::format::quantization::Quantization::FullRange,
         transfer: v4l::format::transfer::TransferFunction::None
     };
-    if std::env::args().any(|arg| arg.contains("send")) {
-        let socket = std::net::UdpSocket::bind("127.0.0.1:8888")?;
-        let device = v4l::Device::with_path("/dev/video4")?;
+    //if std::env::args().any(|arg| arg.contains("send")) {
+        let socket = std::net::UdpSocket::bind("10.0.0.4:8888")?;
+        let device = v4l::Device::with_path("/dev/video0")?;
         device.set_format(&format)?;
         let mut stream = v4l::io::mmap::Stream::with_buffers(&device, v4l::buffer::Type::VideoCapture, 1)?;
         loop {
             println!("read");
             let (image, _) = stream.next().unwrap();
             println!("send");
-            socket.send_to(image, "127.0.0.1:6666")?;
+            socket.send_to(image, "10.0.0.3:6666")?;
             println!("sent");
         }
-    } else {
+    /*} else {
         struct View {
             format: v4l::format::Format,
             stream: std::net::UdpSocket,
@@ -46,6 +46,6 @@ fn main() -> ui::Result<()> {
                 }
             }
         } }
-        ui::run(&mut View{format, stream: std::net::UdpSocket::bind("127.0.0.1:6666")?}, &mut |_| Ok(true))
-    }
+        ui::run(&mut View{format, stream: std::net::UdpSocket::bind("10.0.0.1:6666")?}, &mut |_| Ok(true))
+    }*/
 }

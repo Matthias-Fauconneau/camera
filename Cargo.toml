@@ -4,6 +4,6 @@ package= { name= 'camera', version= '0.0.0', edition= '2021' }
 fehler = '*'
 bytemuck = '*'
 v4l = '*'
-vector = { git= 'https://github.com/Matthias-Fauconneau/vector' }
-image = { git= 'https://github.com/Matthias-Fauconneau/image' }
-ui = { git= 'https://github.com/Matthias-Fauconneau/ui' }
+#vector = { git= 'https://github.com/Matthias-Fauconneau/vector' }
+#image = { git= 'https://github.com/Matthias-Fauconneau/image' }
+#ui = { git= 'https://github.com/Matthias-Fauconneau/ui' }
