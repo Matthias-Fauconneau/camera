@@ -3,7 +3,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     pub enum FieldOrder { /*Any,*/ Progressive=1 }
     pub enum TransferFunction { /*Default, Rec709, SRGB, OPRGB, SMPTE240M,*/ None=5 }
     pub enum Memory { Mmap = 1 }
-    //if std::env::args().any(|arg| arg.contains("send")) {
     use rustix::fd::{AsFd,AsRawFd};
     let fd = rustix::fs::openat(rustix::fs::cwd(), "/dev/video0", rustix::fs::OFlags::RDWR/*|rustix::fs::OFlags::NONBLOCK*/, rustix::fs::Mode::empty())?;
     use v4l::*;
@@ -22,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     unsafe{libc::ioctl(fd.as_fd().as_raw_fd(), linux::ioctl::VIDIOC_QBUF as u64, &mut buffer as *mut _ as *mut std::os::raw::c_void)};
     unsafe{libc::ioctl(fd.as_fd().as_raw_fd(), linux::ioctl::VIDIOC_STREAMON as u64, &mut (Type::VideoCapture as u32) as *mut _ as *mut std::os::raw::c_void)};
-    //let socket = std::net::UdpSocket::bind("10.0.0.4:8888")?;
+    let socket = std::env::args().skip(1).next().map(|addr| std::net::UdpSocket::bind(addr).unwrap()); // 10.0.0.4:8888
     loop {
         println!("poll");
         use rustix::{io::{PollFd,PollFlags}};
@@ -33,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("dequeue");
         unsafe { libc::ioctl(fd.as_raw_fd(), linux::ioctl::VIDIOC_DQBUF as u64, &mut buffer as *mut _ as *mut std::os::raw::c_void); } //flags, field, timestamp, sequence
         println!("send");
-        //socket.send_to(&data[..buffer.bytesused as usize], "10.0.0.3:6666")?;
+        if let Some(socket) = socket.as_ref() { socket.send_to(&data[..buffer.bytesused as usize], std::env::args().skip(2).next().unwrap())?; } // "10.0.0.3:6666"
         println!("sent");
         unsafe{libc::ioctl(fd.as_fd().as_raw_fd(), linux::ioctl::VIDIOC_QBUF as u64, &mut buffer as *mut _ as *mut std::os::raw::c_void)};
     }
