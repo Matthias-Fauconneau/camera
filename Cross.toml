@@ -1,2 +1,3 @@
 [build]
-pre-build = ["dpkg --add-architecture arm64","apt-get update","apt-get install --assume-yes libc6-dev:arm64 libclang-3.9"]
+#pre-build = ["dpkg --add-architecture arm64","apt-get update","apt-get install --assume-yes libc6-dev:arm64 libclang1-3.9"]
+pre-build = ["dpkg --add-architecture armhf","apt-get update","apt-get install --assume-yes libc6-dev:armhf libclang1-3.9"]

@@ -1,12 +1,12 @@
 package= { name= 'camera', version= '0.0.0', edition= '2021' }
-
+features={ui=['dep:ui','image','vector']}
 [dependencies]
 fehler='*'
 bytemuck='*'
 linux={package='linux-raw-sys', version='*'}
 rustix={version='*', features=['fs','mm']}
 libc='*'
-v4l = {package='v4l2-sys-mit',version='*'}
-#vector = { git= 'https://github.com/Matthias-Fauconneau/vector' }
-#image = { git= 'https://github.com/Matthias-Fauconneau/image' }
-#ui = { git= 'https://github.com/Matthias-Fauconneau/ui' }
+v4l={package='v4l2-sys-mit',version='*'}
+vector={git='https://github.com/Matthias-Fauconneau/vector', optional=true}
+image={git='https://github.com/Matthias-Fauconneau/image', optional=true}
+ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true}
