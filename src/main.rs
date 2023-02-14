@@ -33,7 +33,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut buffer = v4l::v4l2_buffer{type_: Type::VideoCapture as u32, memory: Memory::Mmap as u32, index: 0, ..unsafe { std::mem::zeroed() }};
             println!("dequeue");
             unsafe { libc::ioctl(fd.as_raw_fd(), linux::ioctl::VIDIOC_DQBUF as _, &mut buffer as *mut _ as *mut std::os::raw::c_void); } //flags, field, timestamp, sequence
-            println!("{:?}", buffer.timestamp, );
+            let linux::general::__kernel_timespec{tv_sec,tv_nsec} = rustix::time::clock_gettime(rustix::time::ClockId::Monotonic);
+            println!("{}", (tv_sec*1_000_000+tv_nsec/1000) as i64-(buffer.timestamp.tv_sec*1_000_000+buffer.timestamp.tv_usec) as i64);
             if let Some(socket) = socket.as_ref() { socket.send_to(&data[..buffer.bytesused as usize], std::env::args().skip(2).next().unwrap())?; } // 192.168.0.104:6666
             println!("sent");
             unsafe{libc::ioctl(fd.as_fd().as_raw_fd(), linux::ioctl::VIDIOC_QBUF as _, &mut buffer as *mut _ as *mut std::os::raw::c_void)};

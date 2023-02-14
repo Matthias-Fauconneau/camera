@@ -4,7 +4,7 @@ features={ui=['dep:ui','image','vector','local-ip-address']}
 fehler='*'
 bytemuck='*'
 linux={package='linux-raw-sys', version='*'}
-rustix={version='*', features=['fs','mm']}
+rustix={version='*', features=['fs','mm','time']}
 libc='*'
 v4l={package='v4l2-sys-mit',version='*'}
 vector={git='https://github.com/Matthias-Fauconneau/vector', optional=true}
