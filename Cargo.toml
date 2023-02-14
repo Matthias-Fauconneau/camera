@@ -1,5 +1,5 @@
 package= { name= 'camera', version= '0.0.0', edition= '2021' }
-features={ui=['dep:ui','image','vector']}
+features={ui=['dep:ui','image','vector','local-ip-address']}
 [dependencies]
 fehler='*'
 bytemuck='*'
@@ -10,3 +10,4 @@ v4l={package='v4l2-sys-mit',version='*'}
 vector={git='https://github.com/Matthias-Fauconneau/vector', optional=true}
 image={git='https://github.com/Matthias-Fauconneau/image', optional=true}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true}
+local-ip-address={version='*', optional=true}

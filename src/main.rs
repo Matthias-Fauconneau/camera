@@ -33,30 +33,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut buffer = v4l::v4l2_buffer{type_: Type::VideoCapture as u32, memory: Memory::Mmap as u32, index: 0, ..unsafe { std::mem::zeroed() }};
             println!("dequeue");
             unsafe { libc::ioctl(fd.as_raw_fd(), linux::ioctl::VIDIOC_DQBUF as _, &mut buffer as *mut _ as *mut std::os::raw::c_void); } //flags, field, timestamp, sequence
-            println!("send");
+            println!("{:?}", buffer.timestamp, );
             if let Some(socket) = socket.as_ref() { socket.send_to(&data[..buffer.bytesused as usize], std::env::args().skip(2).next().unwrap())?; } // 192.168.0.104:6666
             println!("sent");
             unsafe{libc::ioctl(fd.as_fd().as_raw_fd(), linux::ioctl::VIDIOC_QBUF as _, &mut buffer as *mut _ as *mut std::os::raw::c_void)};
         }
     } else {
+        println!("{}", local_ip_address::local_ip()?);
         struct View(std::net::UdpSocket);
-        impl ui::Widget for View { #[fehler::throws(ui::Error)] fn paint(&mut self, target: &mut ui::Target, _: ui::size, _: ui::int2) {
-            use vector::xy;
-            let mut image = image::Image::<Box<[u16]>>::zero(SIZE.into());
-            println!("receive");
-            let (len, _sender) = self.0.recv_from(bytemuck::cast_slice_mut(&mut image))?;
-            println!("received");
-            assert_eq!(len, image.len()*2);
-            let min = *image.iter().min().unwrap();
-            let max = *image.iter().max().unwrap();
-            if min <= 0 { return; }
-            for y in 0..target.size.y {
-                for x in 0..target.size.x {
-                    let w = (image[xy{x: x*image.size.x/target.size.x, y: y*image.size.y/target.size.y}] - min) as u32 * ((1<<10)-1) / (max - min) as u32;
-                    target[xy{x,y}] = w | w<<10 | w<<20;
+        use ui::*;
+        impl Widget for View {
+            #[throws] fn paint(&mut self, target: &mut Target, _: size, _: int2) {
+                let mut image = image::Image::<Box<[u16]>>::zero(SIZE.into());
+                println!("receive");
+                let (len, _sender) = self.0.recv_from(bytemuck::cast_slice_mut(&mut image))?;
+                println!("received");
+                assert_eq!(len, image.len()*2);
+                let min = *image.iter().min().unwrap();
+                let max = *image.iter().max().unwrap();
+                for value in image.iter_mut() { *value = (((*value - min) as u32 * ((1<<10)-1)) / (max - min) as u32) as u16; }
+                for y in 0..target.size.y {
+                    for x in 0..target.size.x {
+                        let w = image[xy{x: image.size.x-1-y*image.size.x/target.size.y, y: x*image.size.y/target.size.x}] as u32;
+                        target[xy{x,y}] = w | w<<10 | w<<20;
+                    }
                 }
             }
-        } }
+            fn event(&mut self, _: size, _: &mut Option<EventContext>, _: &ui::Event) -> Result<bool> { Ok(true) }
+        }
         let ref address = std::env::args().skip(2).next().unwrap();
         ui::run(address, &mut View(std::net::UdpSocket::bind(address)?))
     }
