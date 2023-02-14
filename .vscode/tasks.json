@@ -4,6 +4,15 @@
         {
             "type": "shell",
             "command": "cargo",
+            "args": ["run","--release"],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "label": "release"
+        }
+        {
+            "type": "shell",
+            "command": "cargo",
             "args": ["run","--features","ui","--","receive","192.168.0.104:6666"],
             "problemMatcher": [
                 "$rustc"
