@@ -1,5 +1,1 @@
-{
-    "rust-analyzer.cargo.features": [
-        "ui"
-    ]
-}
+{"rust-analyzer.cargo.features": ["display"]}

@@ -4,20 +4,38 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--release"],
+            "args": ["run","--release","--","/dev/video4","127.0.0.1:8888","127.0.0.1:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
-            "label": "release"
-        }
+            "label": "video4 loopback"
+        },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--features","ui","--","receive","192.168.0.104:6666"],
+            "args": ["run","--release","--features","display","--","display","127.0.0.1:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
-            "label": "ui"
+            "label": "display loopback"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run","--release","--","192.168.0.104:8888","192.168.0.104:6666"],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "label": "send"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run","--features","display","--","display","192.168.0.104:6666"],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "label": "display"
         }
     ]
 }
