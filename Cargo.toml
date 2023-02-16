@@ -11,5 +11,7 @@ vector={git='https://github.com/Matthias-Fauconneau/vector', optional=true}
 image={git='https://github.com/Matthias-Fauconneau/image', optional=true}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true, features=['text']}
 local-ip-address={version='*', optional=true}
-[patch.'https://github.com/Matthias-Fauconneau/ui']
-ui={path='../ui'}
+#[patch.'https://github.com/Matthias-Fauconneau/image']
+#image={path='../image'}
+#[patch.'https://github.com/Matthias-Fauconneau/ui']
+#ui={path='../ui'}

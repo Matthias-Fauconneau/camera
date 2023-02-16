@@ -75,17 +75,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 } else {
 
                 }
-                //for value in source.iter_mut() { *value = *value & ((1<<14)-1); }
                 let min = *source.iter().min().unwrap() as u32;
                 let max = *source.iter().max().unwrap() as u32;
-                //for value in image.iter_mut() { *value = (((*value - min) as u32 * ((1<<10)-1)) / (max - min) as u32) as u16; }
                 assert_eq!(target.size.x%source_size.x, 0, "{}%{}", target.size.x, source_size.x);
                 assert_eq!(target.size.y%source_size.y, 0, "{}%{}", target.size.y, source_size.y);
                 assert_eq!(target.size.x/source_size.x, target.size.y/source_size.y);
                 let factor = target.size.x/source_size.x;
                 let stride_factor = target.stride*factor;
                 let mut row = target.as_mut_ptr();
-                match factor {
+                if min < max { match factor {
                     N@15 => {
                         for y in 0..source_size.y {
                             {
@@ -170,10 +168,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             row = unsafe{row.add(stride_factor as usize)};
                         }
                     }
-                }
+                }}
                 let text = format!("{:.0} {:.0} {:.0}", (min as f32/100.-273.15), (max as f32/100.-273.15) ,(source[source.size/2] as f32/100.-273.15) );
                 let size = target.size;
-                let mut text = ui::text(&text).paint_fit(&mut target, size, xy{x: 0, y: 0});
+                ui::text(&text).paint_fit(&mut target, size, xy{x: 0, y: 0});
             }
             fn event(&mut self, _: size, _: &mut Option<EventContext>, _: &ui::Event) -> Result<bool> { Ok(true) }
         }
