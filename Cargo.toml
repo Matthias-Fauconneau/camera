@@ -1,5 +1,5 @@
 package= { name= 'camera', version= '0.0.0', edition= '2021' }
-features={display=['dep:ui','image','vector','local-ip-address']}
+features={annotate=['vector','image','ui'],display=['ui','image','vector','local-ip-address'],default=['annotate']}
 [dependencies]
 fehler='*'
 bytemuck='*'

@@ -4,11 +4,11 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--release","--","/dev/video4","127.0.0.1:8888","127.0.0.1:6666"],
+            "args": ["run","--release","--","/dev/video0","127.0.0.1:8888","127.0.0.1:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
-            "label": "video4 loopback"
+            "label": "video0 loopback"
         },
         {
             "type": "shell",
