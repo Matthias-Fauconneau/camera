@@ -1,17 +1,15 @@
 package= { name= 'camera', version= '0.0.0', edition= '2021' }
-features={annotate=['vector','image','ui'],display=['ui','image','vector','local-ip-address'],default=['annotate']}
+features={annotate=['vector','image','ui'],display=['ui','image','vector','local-ip-address'],default=[]}
 [dependencies]
+tracing='*'
+tracing-subscriber='*'
 fehler='*'
 bytemuck='*'
-linux={package='linux-raw-sys', version='0.2', features=['ioctl']}
-rustix={git='https://github.com/Matthias-Fauconneau/rustix', features=['fs','mm','time']}
-#nix={version='*',features=['ioctl']}
-v4l={package='v4l2-sys-mit',version='*'}
+#linux={package='linux-raw-sys', version='0.2', features=['ioctl']}
+#rustix={git='https://github.com/Matthias-Fauconneau/rustix', features=['fs','mm','time']}
+#v4l={package='v4l2-sys-mit',version='*'}
+cameleon={version='*', features=['libusb']}
 vector={git='https://github.com/Matthias-Fauconneau/vector', optional=true}
 image={git='https://github.com/Matthias-Fauconneau/image', optional=true}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true, features=['text']}
 local-ip-address={version='*', optional=true}
-#[patch.'https://github.com/Matthias-Fauconneau/image']
-#image={path='../image'}
-#[patch.'https://github.com/Matthias-Fauconneau/ui']
-#ui={path='../ui'}

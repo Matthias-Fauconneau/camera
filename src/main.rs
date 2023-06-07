@@ -1,50 +1,26 @@
-#![feature(array_methods,portable_simd)]#![allow(non_snake_case)]
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    const SIZE : (u32, u32) = (160, 120);
+//#![feature(array_methods,portable_simd)]#![allow(non_snake_case)]
+fn main() {
+    //tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).init();
+    let mut camera = cameleon::u3v::enumerate_cameras().unwrap().pop().unwrap();
+    println!("{:?}", camera.info());
+    camera.open().unwrap();
+    camera.load_context().unwrap();
+    let payload_rx = camera.start_streaming(3).unwrap();
+    //const SIZE : (u32, u32) = (160, 120);
     if !std::env::args().any(|arg| arg.contains("display")) {
-        pub enum Type { VideoCapture = 1 }
-        pub enum FieldOrder { /*Any,*/ Progressive=1 }
-        pub enum TransferFunction { /*Default, Rec709, SRGB, OPRGB, SMPTE240M,*/ None=5 }
-        pub enum Memory { Mmap = 1 }
-        use rustix::fd::AsFd;
-        let ref fd = rustix::fs::openat(rustix::fs::cwd(), std::env::args().skip(1).next().unwrap(), rustix::fs::OFlags::RDWR|rustix::fs::OFlags::NONBLOCK, rustix::fs::Mode::empty())?;
-        use v4l::*;
-        use {rustix::io::{ioctl,ioctl_mut}, linux::ioctl::*};
-        let type_ = Type::VideoCapture as u32;
-        ioctl(fd, VIDIOC_S_FMT, &v4l2_format{type_, fmt: v4l2_format__bindgen_ty_1{pix: v4l::v4l2_pix_format{width: SIZE.0, height: SIZE.1, pixelformat: u32::from_le_bytes(*b"Y16 "), field: FieldOrder::Progressive as u32, bytesperline: SIZE.0*2, sizeimage: SIZE.0*SIZE.1*2, colorspace: 0, flags: 0, quantization: 0,
-        xfer_func: TransferFunction::None as u32, ..unsafe{std::mem::zeroed()}}}})?;
-        #[allow(non_upper_case_globals)] const count : usize = 2;
-        ioctl(fd, VIDIOC_REQBUFS, &v4l2_requestbuffers{type_, memory: Memory::Mmap as u32, count: count as u32, ..unsafe{std::mem::zeroed()}})?;
-        let mut buffer : [_; count] = std::array::from_fn(|index| v4l2_buffer{type_, memory: Memory::Mmap as u32, index: index as u32, ..unsafe{std::mem::zeroed()}});
-        buffer.each_mut().map(|buffer| ioctl_mut(fd, VIDIOC_QUERYBUF, buffer).unwrap());
-
-        pub struct MemoryMap{ ptr: *mut core::ffi::c_void, len: usize }
-        impl std::ops::Deref for MemoryMap { type Target = [u8]; fn deref(&self) -> &Self::Target { unsafe { std::slice::from_raw_parts(self.ptr as *const u8, self.len) } } }
-        impl Drop for MemoryMap { fn drop(&mut self) { unsafe { rustix::mm::munmap(self.ptr, self.len).unwrap() } } }
-
-        let data = buffer.map(|buffer| MemoryMap{ptr: unsafe{rustix::mm::mmap(std::ptr::null_mut(), buffer.length as usize, rustix::mm::ProtFlags::READ, rustix::mm::MapFlags::SHARED, fd.as_fd(), buffer.m.offset as u64).unwrap()}, len: buffer.length as usize});
-
-        buffer.each_ref().map(|buffer| ioctl(fd, VIDIOC_QBUF, buffer).unwrap());
-        ioctl(fd, VIDIOC_STREAMON, &type_)?;
         let socket = std::env::args().skip(2).next().map(|address| std::net::UdpSocket::bind(address).unwrap()); // 192.168.0.106:8888
         let mut index = 0;
         loop {
-            //println!("poll");
-            use rustix::{io::{PollFd,PollFlags}};
-            let ref mut fds = [PollFd::new(&fd, PollFlags::IN)];
-            rustix::io::poll(fds, -1)?;
-            let ref mut buffer = v4l::v4l2_buffer{type_: Type::VideoCapture as u32, memory: Memory::Mmap as u32, index: index as u32, ..unsafe { std::mem::zeroed() }};
-            //let buffer = &mut buffer[index];
-            //println!("dequeue {}", index);
-            ioctl_mut(fd, VIDIOC_DQBUF, buffer).expect("dequeue"); //flags, field, timestamp, sequence
-            //let linux::general::__kernel_timespec{tv_sec,tv_nsec} = rustix::time::clock_gettime(rustix::time::ClockId::Monotonic);
-            //let timestamp : u64 = (buffer.timestamp.tv_sec as u64)*1_000_000+buffer.timestamp.tv_usec as u64;
             let to = std::env::args().skip(3).next().unwrap();
             //println!("{to} {}", (tv_sec as u64)*1_000_000+(tv_nsec as u64)/1000-timestamp);
-            if let Some(socket) = socket.as_ref() {
-                let data = &data[index][..buffer.bytesused as usize];
-                let data : &[u16] = bytemuck::cast_slice(&data);
-                assert_eq!(data.len(), (SIZE.0 * SIZE.1) as usize);
+                let payload = payload_rx.recv_blocking().unwrap();
+                let image = payload.image_info().unwrap();
+                println!("{:?}", image.pixel_format);
+                            
+                let data = &payload.image().unwrap();//[index][..buffer.bytesused as usize];
+                /*let data : &[u16] = bytemuck::cast_slice(&data);
+                assert_eq!(data.len(), (image.width * image.height) as usize);
                 let min = *data.iter().min().unwrap();
                 let max = *data.iter().max().unwrap();
                 //println!("{min} {max} {} {}", max-min, data.iter().scan(data[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| r.abs()).max().unwrap());
@@ -61,7 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let size = image.size;
                         if target[xy{x,y}]>0 { image[xy{x: size.x-1-y, y: x}] = max; }
                     }}
-                }
+                }*/
                 //println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| r.abs()).max().unwrap()).max().unwrap()); // 1+9bit
                 //println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| 1+r.abs() as usize).sum::<usize>()).sum::<usize>()/(SIZE.0*SIZE.1) as usize); // 31
                 /*fn ceil_log2(x: usize) -> u8 { ((x-1)<<1).ilog2() as u8 }
@@ -79,12 +55,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }).sum::<usize>()).sum::<usize>() as f32/(SIZE.0*SIZE.1) as usize as f32); // 8*/
                 //data[0..8].copy_from_slice(&timestamp.to_ne_bytes());
                 //println!("send {}", data.len());
-                socket.send_to(bytemuck::cast_slice(&image.data), to)?; // 192.168.0.104:6666
+            if let Some(socket) = socket.as_ref() {
+                socket.send_to(/*bytemuck::cast_slice(&image.data)*/data, to).unwrap(); // 192.168.0.104:6666
                 //println!("sent");
             }
             //println!("queue");
-            ioctl(fd, VIDIOC_QBUF, &*buffer).expect("queue");
-            index = (index+1)%count;
+            payload_rx.send_back(payload);                
+            //index = (index+1)%count;
         }
     } else { #[cfg(feature="display")] {
         println!("{}", local_ip_address::local_ip()?);
