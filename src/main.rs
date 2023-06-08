@@ -8,6 +8,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		let mut camera = cameleon::u3v::enumerate_cameras().unwrap().pop().unwrap();
 		camera.open().unwrap();
 		camera.load_context().unwrap();
+    let mut params_ctxt = camera.params_ctxt().unwrap();
+		dbg!(params_ctxt);
 		let payload_rx = camera.start_streaming(3).unwrap();
 		loop {
 			let payload = payload_rx.recv_blocking().unwrap();
