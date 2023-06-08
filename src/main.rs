@@ -11,6 +11,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		let payload_rx = camera.start_streaming(3).unwrap();
 		loop {
 			let payload = payload_rx.recv_blocking().unwrap();
+			let min = *payload.image().unwrap().iter().min().unwrap();
+			let max = *payload.image().unwrap().iter().max().unwrap();
+			println!("{min} {max}");
 			let &cameleon::payload::ImageInfo{width, height, ..} = payload.image_info().unwrap();
 			let source = Image::new(xy{x: width as u32, y: height as u32}, payload.image().unwrap());
 			#[cfg(feature="new_uninit")] let mut target = Image::uninitialized(SIZE); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
@@ -57,7 +60,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 				let factor = target.size.x/source_size.x;
 				let stride_factor = target.stride*factor;
 				let mut row = target.as_mut_ptr();
-				if min >= max { return; }
+				if min >= max { println!("{min} {max}"); return; }
 				println!("{factor}");
 				for y in 0..source_size.y {
 					{
