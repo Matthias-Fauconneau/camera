@@ -1,28 +1,30 @@
 #![cfg_attr(feature="portable_simd", feature(portable_simd))]
 use {vector::xy, image::Image};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-	const SIZE : xy<u32> = xy{x: 320, y: 200};
+	//const SIZE : xy<u32> = xy{x: 320, y: 200};
+	const SIZE : xy<u32> = xy{x: 160, y: 100};
 	if !std::env::args().any(|arg| arg.contains("ui")) {
 		let socket = std::env::args().skip(2).next().map(|address| std::net::UdpSocket::bind(address).unwrap()); // 192.168.0.105:8888
 		let to = std::env::args().skip(3).next().unwrap();
 		let mut camera = cameleon::u3v::enumerate_cameras().unwrap().pop().unwrap();
 		camera.open().unwrap();
 		camera.load_context().unwrap();
-    let mut params_ctxt = camera.params_ctxt().unwrap();
-		dbg!(params_ctxt);
-		let payload_rx = camera.start_streaming(3).unwrap();
+		let params_ctxt = camera.params_ctxt().unwrap();
+		//dbg!(params_ctxt.ctxt);
+		let payload_rx = camera.start_streaming(1).unwrap();
 		loop {
 			let payload = payload_rx.recv_blocking().unwrap();
-			let min = *payload.image().unwrap().iter().min().unwrap();
-			let max = *payload.image().unwrap().iter().max().unwrap();
-			println!("{min} {max}");
+			//let min = *payload.image().unwrap().iter().min().unwrap();
+			//let max = *payload.image().unwrap().iter().max().unwrap();
+			//println!("{min} {max}");
 			let &cameleon::payload::ImageInfo{width, height, ..} = payload.image_info().unwrap();
 			let source = Image::new(xy{x: width as u32, y: height as u32}, payload.image().unwrap());
 			#[cfg(feature="new_uninit")] let mut target = Image::uninitialized(SIZE); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
 			#[cfg(not(feature="new_uninit"))] let mut target = Image::zero(SIZE); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
-			for y in 0..target.size.y { for x in 0..target.size.x { target[xy{x,y}] = source[xy{x: x*6, y: y*6}]; /*FIXME: box*/ } }
+			//for y in 0..target.size.y { for x in 0..target.size.x { target[xy{x,y}] = source[xy{x: x*6, y: y*6}]; /*FIXME: box*/ } }
+			for y in 0..target.size.y { for x in 0..target.size.x { target[xy{x,y}] = source[xy{x: x*12, y: y*12}]; /*FIXME: box*/ } }
 			payload_rx.send_back(payload);
-			if let Some(socket) = socket.as_ref() { socket.send_to(&target.data, &to).unwrap(); println!("Sent"); }
+			if let Some(socket) = socket.as_ref() { socket.send_to(&target.data, &to).unwrap(); /*println!("Sent");*/ }
 		}
 	} else { #[cfg(feature="ui")] {
 		struct View(std::net::UdpSocket);
@@ -37,11 +39,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 				let mut target = target.slice_mut((target.size-target_size)/2, target_size);
 				if true {
 					let packet = bytemuck::cast_slice_mut(&mut source);
-					println!("Waiting on {:?}", self.0);
+					//println!("Waiting on {:?}", self.0);
 					let (len, _sender) = self.0.recv_from(packet)?;
-					println!("Received");
+					//println!("Received");
 					assert_eq!(len, source.len()*1);
 				}
+				/*for y in 0..target.size.y { for x in 0..target.size.x {
+					let value = x*255/(target.size.x-1);
+					let p = value as u32 | (value as u32)<<8 | (value as u32)<<16;
+					target[xy{x,y}] = p;
+				}}*/
 				let min = *source.iter().min().unwrap();
 				let max = *source.iter().max().unwrap();
 
@@ -56,6 +63,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 					}}
 				}*/
 
+				assert!(target.size.x > source_size.x, "{}>{}", target.size.x, source_size.x);
+				assert!(target.size.y > source_size.y, "{}>{}", target.size.x, source_size.x);
 				assert_eq!(target.size.x%source_size.x, 0, "{}%{}", target.size.x, source_size.x);
 				assert_eq!(target.size.y%source_size.y, 0, "{}%{}", target.size.y, source_size.y);
 				assert_eq!(target.size.x/source_size.x, target.size.y/source_size.y);
@@ -63,13 +72,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 				let stride_factor = target.stride*factor;
 				let mut row = target.as_mut_ptr();
 				if min >= max { println!("{min} {max}"); return; }
-				println!("{factor}");
+				//println!("{source_size} {} {factor}", target.size);
+				//println!("{min} {max}");
 				for y in 0..source_size.y {
 					{
 						let mut row = row;
 						for x in 0..source_size.x {
-							let value = source[xy{x: source.size.x-1-y, y: x}];
+							//let value = source[xy{x: source.size.x-1-y, y: x}];
+							let value = source[xy{x,y}];
 							let value = (((value - min) as u32 * ((1<<8)-1)) / (max - min) as u32) as u8;
+							//let value = x*255/(source_size.x-1);
 							let p = value as u32 | (value as u32)<<8 | (value as u32)<<16;
 							#[cfg(feature="portable_simd")] let p4 = std::simd::u32x4::splat(p);
 							#[cfg(not(feature="portable_simd"))] let p4 = [p; 4];
