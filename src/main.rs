@@ -1,7 +1,7 @@
 //#![feature(array_methods,portable_simd)]#![allow(non_snake_case)]
 fn main() {
     //tracing_subscriber::fmt().init();
-    tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).init();
+    //tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).init();
     let mut camera = cameleon::u3v::enumerate_cameras().unwrap().pop().unwrap();
     println!("{:?}", camera.info());
     camera.open().unwrap();
@@ -9,58 +9,61 @@ fn main() {
     let payload_rx = camera.start_streaming(3).unwrap();
     //const SIZE : (u32, u32) = (160, 120);
     if !std::env::args().any(|arg| arg.contains("display")) {
-        let socket = std::env::args().skip(2).next().map(|address| std::net::UdpSocket::bind(address).unwrap()); // 192.168.0.106:8888
-        let mut index = 0;
+        let socket = std::env::args().skip(2).next().map(|address| std::net::UdpSocket::bind(address).unwrap()); // 192.168.0.105:8888
+        let to = std::env::args().skip(3).next().unwrap();
+        //let mut index = 0;
         loop {
-            let to = std::env::args().skip(3).next().unwrap();
             //println!("{to} {}", (tv_sec as u64)*1_000_000+(tv_nsec as u64)/1000-timestamp);
-                let payload = payload_rx.recv_blocking().unwrap();
-                let image = payload.image_info().unwrap();
-                println!("{:?}", image.pixel_format);
-                            
-                let data = &payload.image().unwrap();//[index][..buffer.bytesused as usize];
-                /*let data : &[u16] = bytemuck::cast_slice(&data);
-                assert_eq!(data.len(), (image.width * image.height) as usize);
-                let min = *data.iter().min().unwrap();
-                let max = *data.iter().max().unwrap();
-                //println!("{min} {max} {} {}", max-min, data.iter().scan(data[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| r.abs()).max().unwrap());
-                let data = Box::<[_]>::from(data);
-                let mut image = image::Image::new(SIZE.into(), data);
-                let text = format!("{:.0} {:.0} {:.0}", (min as f32/100.-273.15), (image[image.size/2] as f32/100.-273.15), (max as f32/100.-273.15));
-                {
-                    let image_size = image.size.yx(); // Rotated
-                    let mut target = image::Image::<Box<[u32]>>::zero(image_size);
-                    let size = target.size;
-                    use vector::xy;
-                    ui::text(&text).paint_fit(&mut target.as_mut(), size, xy{x: 0, y: 0});
-                    for y in 0..target.size.y { for x in 0..target.size.x {
-                        let size = image.size;
-                        if target[xy{x,y}]>0 { image[xy{x: size.x-1-y, y: x}] = max; }
-                    }}
-                }*/
-                //println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| r.abs()).max().unwrap()).max().unwrap()); // 1+9bit
-                //println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| 1+r.abs() as usize).sum::<usize>()).sum::<usize>()/(SIZE.0*SIZE.1) as usize); // 31
-                /*fn ceil_log2(x: usize) -> u8 { ((x-1)<<1).ilog2() as u8 }
-                println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r:i16| {
-                    let u = if r > 0 { ((r as u16)<<1)-1 } else { ((-r) as u16)<<1 };
-                    const k : usize = 4;
-                    let u = u >> k;
-                    //let u2 = ((r as u16)<<1) ^ ((r as u16)>>15);
-                    //assert_eq!(u, u2, "{r} {u} {u2}");
-                    let e : u16 = u + 1;
-                    assert!(e > 0, "{r} {u}");
-                    let b = 16 - e.leading_zeros(); // ceil_ilog2
-                    //println!("{e} {b}");
-                    (b-1+b) as usize + k
-                }).sum::<usize>()).sum::<usize>() as f32/(SIZE.0*SIZE.1) as usize as f32); // 8*/
-                //data[0..8].copy_from_slice(&timestamp.to_ne_bytes());
-                //println!("send {}", data.len());
+            let payload = payload_rx.recv_blocking().unwrap();
+            let &cameleon::payload::ImageInfo{width, height, ..} = payload.image_info().unwrap();
+            use {vector::xy, image::Image};
+            let source = Image::new(xy{x: width as u32, y: height as u32}, payload.image().unwrap());
+            let mut target = Image::uninitialized(xy{x: 320, y: 240}); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
+            for y in 0..target.size.y { for x in 0..target.size.x {
+                target[xy{x,y}] = source[xy{x: x*6, y: y*6}]; // FIXME: box
+            }}
+            payload_rx.send_back(payload);
+            /*let data : &[u16] = bytemuck::cast_slice(&data);
+            assert_eq!(data.len(), (image.width * image.height) as usize);
+            let min = *data.iter().min().unwrap();
+            let max = *data.iter().max().unwrap();
+            //println!("{min} {max} {} {}", max-min, data.iter().scan(data[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| r.abs()).max().unwrap());
+            let data = Box::<[_]>::from(data);
+            let mut image = image::Image::new(SIZE.into(), data);
+            let text = format!("{:.0} {:.0} {:.0}", (min as f32/100.-273.15), (image[image.size/2] as f32/100.-273.15), (max as f32/100.-273.15));
+            {
+                let image_size = image.size.yx(); // Rotated
+                let mut target = image::Image::<Box<[u32]>>::zero(image_size);
+                let size = target.size;
+                use vector::xy;
+                ui::text(&text).paint_fit(&mut target.as_mut(), size, xy{x: 0, y: 0});
+                for y in 0..target.size.y { for x in 0..target.size.x {
+                    let size = image.size;
+                    if target[xy{x,y}]>0 { image[xy{x: size.x-1-y, y: x}] = max; }
+                }}
+            }*/
+            //println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| r.abs()).max().unwrap()).max().unwrap()); // 1+9bit
+            //println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r| 1+r.abs() as usize).sum::<usize>()).sum::<usize>()/(SIZE.0*SIZE.1) as usize); // 31
+            /*fn ceil_log2(x: usize) -> u8 { ((x-1)<<1).ilog2() as u8 }
+            println!("{}", image.map(|row| row.iter().scan(row[0], |predictor, &value| { let residual = value as i16-*predictor as i16; *predictor=value; Some(residual) }).map(|r:i16| {
+                let u = if r > 0 { ((r as u16)<<1)-1 } else { ((-r) as u16)<<1 };
+                const k : usize = 4;
+                let u = u >> k;
+                //let u2 = ((r as u16)<<1) ^ ((r as u16)>>15);
+                //assert_eq!(u, u2, "{r} {u} {u2}");
+                let e : u16 = u + 1;
+                assert!(e > 0, "{r} {u}");
+                let b = 16 - e.leading_zeros(); // ceil_ilog2
+                //println!("{e} {b}");
+                (b-1+b) as usize + k
+            }).sum::<usize>()).sum::<usize>() as f32/(SIZE.0*SIZE.1) as usize as f32); // 8*/
+            //data[0..8].copy_from_slice(&timestamp.to_ne_bytes());
+            //println!("send {}", data.len());
             if let Some(socket) = socket.as_ref() {
-                socket.send_to(/*bytemuck::cast_slice(&image.data)*/data, to).unwrap(); // 192.168.0.104:6666
+                socket.send_to(/*bytemuck::cast_slice(&image.data)*/&target.data, &to).unwrap(); // 192.168.0.104:6666
                 //println!("sent");
             }
             //println!("queue");
-            payload_rx.send_back(payload);                
             //index = (index+1)%count;
         }
     } else { #[cfg(feature="display")] {
