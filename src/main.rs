@@ -18,7 +18,8 @@ fn main() {
             let &cameleon::payload::ImageInfo{width, height, ..} = payload.image_info().unwrap();
             use {vector::xy, image::Image};
             let source = Image::new(xy{x: width as u32, y: height as u32}, payload.image().unwrap());
-            let mut target = Image::uninitialized(xy{x: 320, y: 240}); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
+            #[cfg(feature="new_uninit")] let mut target = Image::uninitialized(xy{x: 320, y: 240}); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
+            #[cfg(not(feature="new_uninit"))] let mut target = Image::zero(xy{x: 320, y: 240}); // max UDP:65,527. 1920x1200/6=320x200=64000 (next 384x240=92K. @164fps=10M/s)
             for y in 0..target.size.y { for x in 0..target.size.x {
                 target[xy{x,y}] = source[xy{x: x*6, y: y*6}]; // FIXME: box
             }}

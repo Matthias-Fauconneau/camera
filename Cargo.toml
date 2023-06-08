@@ -13,7 +13,3 @@ vector={git='https://github.com/Matthias-Fauconneau/vector'}
 image={git='https://github.com/Matthias-Fauconneau/image'}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true, features=['text']}
 local-ip-address={version='*', optional=true}
-[patch.'https://github.com/Matthias-Fauconneau/vector']
-vector={path='../vector'}
-[patch.'https://github.com/Matthias-Fauconneau/image']
-image={path='../image'}
