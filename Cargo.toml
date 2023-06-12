@@ -4,6 +4,7 @@ fehler='*'
 bytemuck='*'
 vector={git='https://github.com/Matthias-Fauconneau/vector'}
 image={git='https://github.com/Matthias-Fauconneau/image'}
+uvc-sys='*'
 cameleon={version='*', features=['libusb']}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true}#, features=['softbuffer']} #'text'
 

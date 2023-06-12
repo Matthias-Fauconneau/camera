@@ -4,16 +4,34 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
+            "args": ["run","--","192.168.0.105:6666","192.168.0.102:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
-            "label": "send"
+            "label": "dev send"
         },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--features","ui,ui/softbuffer","--","ui","192.168.0.102:6666"],
+            "args": ["run","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "label": "release send"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": ["--offline","run","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "label": "offline send"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": ["--offline","run","--release","--features","ui,ui/softbuffer","--","ui","192.168.0.102:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
