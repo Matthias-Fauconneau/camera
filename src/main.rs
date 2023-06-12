@@ -14,7 +14,8 @@ impl Default for CameraDescriptor { fn default() -> Self { Self{id:0, r#type:0, 
 // C:\Program Files\IDS\ids_peak\comfort_sdk\api\{include\ids_peak_comfort_c/ids_peak_comfort_c.h, lib/x86_64/ids_peak_comfort_c.dll}
 #[repr(C)] pub struct Camera { _data: [u8; 0], _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>}
 #[repr(C)] pub struct Frame { _data: [u8; 0], _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>}
-#[link(name="ids_peak_comfort_c", kind="raw-dylib")] extern "C" { 
+//#[link(name="ids_peak_comfort_c", kind="raw-dylib")] extern "C" { 
+#[link(name="ids_peak_comfort_c")] extern "C" { 
 	#[link_name="peak_Library_Init"] pub fn Library_init() -> u32;
 	#[link_name="peak_CameraList_Update"] pub fn CameraList_update(len: *const usize) -> u32; 
 	#[link_name="peak_CameraList_Get"] pub fn CameraList_get(buffer: *mut CameraDescriptor, len: *mut usize) -> u32; 
@@ -24,10 +25,11 @@ impl Default for CameraDescriptor { fn default() -> Self { Self{id:0, r#type:0, 
 }
 
 fn main() {//-> Result<(), Box<dyn std::error::Error>> {
-  unsafe{Library_init()};
-	unsafe{CameraList_update(null_mut())};
+  assert_eq!(unsafe{Library_init()}, 0);
+	assert_eq!(unsafe{CameraList_update(null_mut())}, 0);
   let mut cameras_len = 0;
-  unsafe{CameraList_get(null_mut(), &mut cameras_len as *mut _)};
+  assert_eq!(unsafe{CameraList_get(null_mut(), &mut cameras_len as *mut _)}, 0);
+	assert!(cameras_len >= 1, "{cameras_len}");
   let mut cameras = Box::from_iter(std::iter::from_fn(|| Default::default()).take(cameras_len));
   unsafe{CameraList_get(cameras.as_mut_ptr(), &mut cameras_len as *mut _)};
 	let mut camera = null();
