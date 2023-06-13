@@ -4,9 +4,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 	// max UDP: 65,527
   //const SIZE : xy<u32> = xy{x: 320, y: 200}; //1920x1200/6=320x200=64000 @6M/s (next 384x240=92K. @164fps=10M/s)
 	//const SIZE : xy<u32> = xy{x: 288, y: 216}; //2592x1944/9=288x216=62208 (next 324x243=79K. @48fps=4M/s)
-	const SIZE : xy<u32> = xy{x: 256, y: 192}; // 50K @25fps=1M/s
+	const SIZE : xy<u32> = xy{x: 256, y: 192}; // 16bit 100K @25fps=1M/s
 	//const SIZE : xy<u32> = xy{x: 160, y: 100}; //1920x1200/12 @2M/s
-	if !std::env::args().any(|arg| arg.contains("ui")) {
+	#[cfg(feature="uvc")] if !std::env::args().any(|arg| arg.contains("ui")) {
 		let socket = std::env::args().skip(2).next().map(|address| std::net::UdpSocket::bind(address).unwrap()); // 192.168.0.105:8888
 		let to = std::env::args().skip(3).next().unwrap();
 		/*std::env::set_var("GENICAM_GENTL32_PATH","/usr/lib/ids/cti");
@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			frame.width(), frame.height()
 		}, frame.clone()).unwrap();*/
 		use std::ptr::null_mut;
-		use uvc_sys::*;
+		use uvc::*;
 		let mut uvc = null_mut();
 		assert!(unsafe{uvc_init(&mut uvc as *mut _, null_mut())} >= 0);
 		let mut device = null_mut();
@@ -69,14 +69,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			assert!(unsafe{uvc_stream_get_frame(stream, &mut frame as *mut _, 1000000)} >= 0);
 			assert!(!frame.is_null());
 			let frame = unsafe{*frame};
-			if let Some(socket) = socket.as_ref() { socket.send_to(unsafe{std::slice::from_raw_parts(frame.data as *const u8, frame.data_bytes as usize)}, &to).unwrap(); }
+			let source = unsafe{std::slice::from_raw_parts(frame.data as *const u8, (frame.data_bytes/2) as usize)};
+			let min = *source.iter().min().unwrap();
+			let max = *source.iter().max().unwrap();
+			let target = Box::from_iter(source.iter().map(|s| ((s-min) as u32) * 0xFF / (max-min)));
+			if let Some(socket) = socket.as_ref() { socket.send_to(&target, &to).unwrap(); }
 		}
-	} else { #[cfg(feature="ui")] {
+	}
+	#[cfg(feature="ui")] {
 		struct View(std::net::UdpSocket);
 		use ui::*;
 		impl Widget for View {
 			#[throws] fn paint(&mut self, target: &mut Target, _: size, _: int2) {
-				type Sample = u16;
+				type Sample = u8;
 				#[cfg(feature="new_uninit")] let mut source = image::Image::<Box<[Sample]>>::uninitialized(SIZE);
 				#[cfg(not(feature="new_uninit"))] let mut source = image::Image::<Box<[Sample]>>::zero(SIZE);
 				let source_size = source.size;//.yx(); // Rotated
@@ -119,7 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 				let mut row = target.as_mut_ptr();
 				if min >= max { println!("{min} {max}"); return; }
 				//println!("{source_size} {} {factor}", target.size);
-				println!("{min} {max}");
+				println!("{factor} {min} {max}");
 				for y in 0..source_size.y {
 					{
 						let mut row = row;
@@ -161,7 +166,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 		}
 		let ref address = std::env::args().skip(2).next().unwrap();
 		ui::run(address, &mut View(std::net::UdpSocket::bind(address)?))
-	}
-	#[cfg(not(feature="ui"))] unimplemented!();
 	}
 }

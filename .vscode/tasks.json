@@ -4,7 +4,7 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--","192.168.0.105:6666","192.168.0.102:6666"],
+            "args": ["run","--features","uvc","--","192.168.0.105:6666","192.168.0.102:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
@@ -13,7 +13,7 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
+            "args": ["run","--features","uvc","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
             "problemMatcher": [
                 "$rustc"
             ],
