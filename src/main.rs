@@ -1,5 +1,5 @@
 #![cfg_attr(feature="portable_simd", feature(portable_simd))]
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
 	use vector::xy;
 	// max UDP: 65,527
   //const SIZE : xy<u32> = xy{x: 320, y: 200}; //1920x1200/6=320x200=64000 @6M/s (next 384x240=92K. @164fps=10M/s)
@@ -69,11 +69,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 			assert!(unsafe{uvc_stream_get_frame(stream, &mut frame as *mut _, 1000000)} >= 0);
 			assert!(!frame.is_null());
 			let frame = unsafe{*frame};
-			let source = unsafe{std::slice::from_raw_parts(frame.data as *const u8, (frame.data_bytes/2) as usize)};
+			let source = unsafe{std::slice::from_raw_parts(frame.data as *const u16, (frame.data_bytes/2) as usize)};
 			let min = *source.iter().min().unwrap();
 			let max = *source.iter().max().unwrap();
-			let target = Box::from_iter(source.iter().map(|s| ((s-min) as u32) * 0xFF / (max-min)));
-			if let Some(socket) = socket.as_ref() { socket.send_to(&target, &to).unwrap(); }
+			if min<max {
+				let target = Box::from_iter(source.iter().map(|s| (((s-min) as u32) * 0xFF / (max-min) as u32) as u8));
+				if let Some(socket) = socket.as_ref() { socket.send_to(&target, &to).unwrap(); }
+			}
 		}
 	}
 	#[cfg(feature="ui")] {
