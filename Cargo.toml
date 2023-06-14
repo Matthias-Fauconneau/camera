@@ -7,7 +7,8 @@ image={git='https://github.com/Matthias-Fauconneau/image'}
 uvc={package='uvc-sys', version='*', optional=true}
 cameleon={version='*', features=['libusb']}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true}#, features=['softbuffer']} #'text'
-
+imagers={package='image',version='*', optional=true}
+chrono='*'
 #[patch.'https://github.com/Matthias-Fauconneau/ui']
 #ui={path='../ui'}
 #[patch.'https://github.com/Matthias-Fauconneau/image']

@@ -4,38 +4,23 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--features","uvc","--","192.168.0.105:6666","192.168.0.102:6666"],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "label": "dev send"
+            "args": ["--offline","run","--release","--features","ui,ui/softbuffer,imagers","--","uvc","192.168.0.102"],
+            "problemMatcher": ["$rustc"],
+            "label": "uvc"
         },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--features","uvc","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "label": "release send"
+            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","ids","192.168.0.102"],
+            "problemMatcher": ["$rustc"],
+            "label": "ids"
         },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["--offline","run","--release","--","192.168.0.105:6666","192.168.0.102:6666"],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "label": "offline send"
-        },
-        {
-            "type": "shell",
-            "command": "cargo",
-            "args": ["--offline","run","--release","--features","ui,ui/softbuffer","--","ui","192.168.0.102:6666"],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "label": "ui"
+            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","bsl","192.168.0.102"],
+            "problemMatcher": ["$rustc"],
+            "label": "bsl"
         }
     ]
 }
