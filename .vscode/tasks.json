@@ -11,14 +11,14 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","ids","192.168.0.102"],
+            "args": ["--offline","run","--release","--features","ui,ui/softbuffer,imagers","--","ids","192.168.0.102"],
             "problemMatcher": ["$rustc"],
             "label": "ids"
         },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","bsl","192.168.0.102"],
+            "args": ["--offline","run","--release","--features","ui,ui/softbuffer,imagers","--","bsl","192.168.0.102"],
             "problemMatcher": ["$rustc"],
             "label": "bsl"
         }

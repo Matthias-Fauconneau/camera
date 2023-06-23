@@ -16,11 +16,12 @@ fn main() {
 		let socket = std::net::UdpSocket::bind((address, port)).unwrap();
 		let to = (std::env::args().skip(3).next().unwrap(), port);
 		match camera.as_str() {
-		camera @ ("ids"|"bsl") => {
+		_camera @ ("ids"|"bsl") => {
 			//std::env::set_var("GENICAM_GENTL32_PATH","/usr/lib/ids/cti");
 			let mut cameras = cameleon::u3v::enumerate_cameras().unwrap();
 			for camera in &cameras { println!("{:?}", camera.info()); }
-			let mut camera = cameras.swap_remove(match camera {"bsl" => 0, "ids" => 1, _ => unreachable!()});
+			//let mut camera = cameras.swap_remove(match camera {"bsl" => 0, "ids" => 1, _ => unreachable!()});
+			let ref mut camera = cameras[0]; // find(|c| c.info().contains("U3-368xXLE-NIR")).unwrap()
 			camera.open().unwrap();
 			camera.load_context().unwrap();
 			//let mut params_ctxt = camera.params_ctxt().unwrap();
@@ -55,8 +56,13 @@ fn main() {
 			let mut device = null_mut();
 			assert!(unsafe{uvc_find_device(uvc, &mut device as *mut _, 0, 0, std::ptr::null())} >= 0);
 			let mut device_descriptor : *mut uvc_device_descriptor_t = null_mut();
-			unsafe{uvc_get_device_descriptor(device, &mut device_descriptor as &mut _)};
-			//println!("{:?}", unsafe{std::ffi::CStr::from_ptr(unsafe{*device_descriptor}.product)});
+			assert!(unsafe{uvc_get_device_descriptor(device, &mut device_descriptor as &mut _)} >= 0);
+			assert!(!device_descriptor.is_null());
+			let device_descriptor = unsafe{*device_descriptor};
+			println!("{} {} {}", device_descriptor.idVendor, device_descriptor.idProduct, device_descriptor.bcdUVC);
+			if !device_descriptor.serialNumber.is_null() { println!("{:?}", unsafe{std::ffi::CStr::from_ptr(device_descriptor.serialNumber)}); }
+			if !device_descriptor.manufacturer.is_null() { println!("{:?}", unsafe{std::ffi::CStr::from_ptr(device_descriptor.manufacturer)}); }
+			if !device_descriptor.product.is_null() { println!("{:?}", unsafe{std::ffi::CStr::from_ptr(device_descriptor.product)}); }
 			let mut device_handle = null_mut();
 			assert!(unsafe{uvc_open(device, &mut device_handle as *mut _)} >= 0);
 			let mut control = unsafe{std::mem::zeroed()};
