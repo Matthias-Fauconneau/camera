@@ -4,21 +4,35 @@
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["--offline","run","--release","--features","ui,ui/softbuffer,imagers","--","uvc","192.168.0.102"],
+            "args": ["run","--release","--features","uvc","--","uvc","127.0.0.1","10.4.109.98"],
             "problemMatcher": ["$rustc"],
-            "label": "uvc"
+            "label": "uvc capture"
         },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["--offline","run","--release","--features","ui,ui/softbuffer,imagers","--","ids","192.168.0.102"],
+            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","uvc","10.4.109.98"],
             "problemMatcher": ["$rustc"],
-            "label": "ids"
+            "label": "uvc display"
         },
         {
             "type": "shell",
             "command": "cargo",
-            "args": ["--offline","run","--release","--features","ui,ui/softbuffer,imagers","--","bsl","192.168.0.102"],
+            "args": ["run","--release","--features","uvc","--","ids","127.0.0.1","10.4.109.98"],
+            "problemMatcher": ["$rustc"],
+            "label": "ids capture"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","ids","10.4.109.98"],
+            "problemMatcher": ["$rustc"],
+            "label": "ids display"
+        },
+        {
+            "type": "shell",
+            "command": "cargo",
+            "args": ["run","--release","--features","ui,ui/softbuffer,imagers","--","bsl","10.4.109.98"],
             "problemMatcher": ["$rustc"],
             "label": "bsl"
         }
