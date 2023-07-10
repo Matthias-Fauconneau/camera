@@ -17,7 +17,7 @@ fn main() {
 		let to = (std::env::args().skip(3).next().unwrap(), port);
 		match camera.as_str() {
 		_camera @ ("ids"|"bsl") => {
-			//std::env::set_var("GENICAM_GENTL32_PATH","/usr/lib/ids/cti");
+			//std::env::set_var("GENICAM_GENTL64_PATH","/usr/lib/ids/cti");
 			let mut cameras = cameleon::u3v::enumerate_cameras().unwrap();
 			for camera in &cameras { println!("{:?}", camera.info()); }
 			//let mut camera = cameras.swap_remove(match camera {"bsl" => 0, "ids" => 1, _ => unreachable!()});

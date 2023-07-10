@@ -9,9 +9,3 @@ cameleon={version='*', features=['libusb']}
 ui={git='https://github.com/Matthias-Fauconneau/ui', optional=true}#, features=['softbuffer']} #'text'
 imagers={package='image',version='*', optional=true}
 chrono='*'
-#[patch.'https://github.com/Matthias-Fauconneau/ui']
-#ui={path='../ui'}
-#[patch.'https://github.com/Matthias-Fauconneau/image']
-#image={path='../image'}
-#[patch.'https://github.com/Matthias-Fauconneau/vector']
-#vector={path='../vector'}
